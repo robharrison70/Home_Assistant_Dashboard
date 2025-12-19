@@ -31,44 +31,67 @@
         <div id="content">Loading System Data...</div>
     </div>
 
-    <script>
-        const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLPLCFFC8Hi3lfSSHxo-1KRi9BYhboLM7s2zCZXSmCQbXtjIC9mdbzgi-J_kgdGO4XiEWzGQXZRoMV/pub?gid=0&single=true&output=csv
-            ";
-        let masterData = [];
+    <script><script>
+    // Your verified link
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLPLCFFC8Hi3lfSSHxo-1KRi9BYhboLM7s2zCZXSmCQbXtjIC9mdbzgi-J_kgdGO4XiEWzGQXZRoMV/pub?gid=0&single=true&output=csv";
+    
+    let masterData = [];
 
-        async function init() {
+    async function init() {
+        try {
             const response = await fetch(sheetUrl);
             const text = await response.text();
-            // Split CSV into rows and columns
-            masterData = text.split('\n').map(row => row.split(','));
-            showCategory('Drone'); // Default view
-        }
-
-        function showCategory(cat) {
-            // Update Buttons
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Build Table
-            let html = `<table class="inventory-table"><thead><tr><th>Model</th><th>Specs</th><th>Status</th></tr></thead><tbody>`;
             
-            // Filter data based on the "Category" column (Column 0 in your sheet)
-            masterData.forEach(cols => {
-                if (cols[0] === cat) {
-                    html += `<tr>
-                        <td><strong>${cols[1]}</strong></td>
-                        <td>${cols[2]}</td>
-                        <td><span class="status-tag">${cols[3]}</span></td>
-                    </tr>`;
-                }
-            });
+            // This part cleans up the Google Sheet data
+            masterData = text.split('\n')
+                             .map(row => row.split(',').map(cell => cell.trim()));
+            
+            console.log("Data Loaded Successfully:", masterData);
+            showCategory('Drone'); // Start by showing Drones
+        } catch (error) {
+            document.getElementById('content').innerHTML = "⚠️ Error connecting to Google Sheets. Check internet or link.";
+            console.error(error);
+        }
+    }
 
-            html += `</tbody></table>`;
-            document.getElementById('content').innerHTML = html;
+    function showCategory(cat) {
+        // Update Buttons Visuals
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        
+        // Find the button that was clicked and highlight it
+        if(event && event.target) {
+            event.target.classList.add('active');
+        } else {
+            document.querySelector('.fpv-btn').classList.add('active');
         }
 
-        init();
-    </script>
+        let html = `<table class="inventory-table"><thead><tr><th>Model</th><th>Specs</th><th>Status</th></tr></thead><tbody>`;
+        
+        let foundMatch = false;
+
+        masterData.forEach(cols => {
+            // Check if the first column matches 'Drone' or 'Home'
+            if (cols[0] === cat) {
+                foundMatch = true;
+                html += `<tr>
+                    <td><strong>${cols[1]}</strong></td>
+                    <td>${cols[2]}</td>
+                    <td><span class="status-tag">${cols[3]}</span></td>
+                </tr>`;
+            }
+        });
+
+        if (!foundMatch) {
+            html += `<tr><td colspan="3" style="text-align:center;">No items found for "${cat}". Check your Sheet's Category column!</td></tr>`;
+        }
+
+        html += `</tbody></table>`;
+        document.getElementById('content').innerHTML = html;
+    }
+
+    init();
+</script>
 </body>
 </html>
+
 
