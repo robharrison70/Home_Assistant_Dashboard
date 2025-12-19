@@ -1,147 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        :root {
-            --fpv-orange: #ff6600;
-            --ha-blue: #03a9f4;
-            --bg-dark: #0a0a0a;
-            --card-bg: #161616;
-            --border-color: #2a2a2a;
-            --text-main: #e0e0e0;
-            --text-dim: #777;
-        }
-        body { font-family: 'Consolas', 'Monaco', monospace; background: var(--bg-dark); color: var(--text-main); margin: 0; padding-bottom: 80px; }
-        header { background: #000; padding: 2rem; text-align: center; border-bottom: 2px solid var(--fpv-orange); }
-        .container { max-width: 1000px; margin: auto; padding: 20px; }
+        :root { --fpv: #ff6600; --ha: #03a9f4; --bg: #0a0a0a; --card: #161616; }
+        body { font-family: 'Segoe UI', monospace; background: var(--bg); color: #e0e0e0; margin: 0; padding: 0; }
         
-        /* Section Headers */
-        .master-label { color: var(--text-dim); font-size: 0.7rem; letter-spacing: 5px; text-transform: uppercase; margin-top: 50px; display: block; text-align: center; }
+        /* Navigation Tabs */
+        .nav-bar { display: flex; background: #000; border-bottom: 1px solid #333; }
+        .nav-btn { flex: 1; padding: 20px; text-align: center; cursor: pointer; font-weight: bold; letter-spacing: 2px; border: none; background: none; color: #555; transition: 0.3s; }
+        .nav-btn.active.fpv-btn { color: var(--fpv); border-bottom: 3px solid var(--fpv); }
+        .nav-btn.active.ha-btn { color: var(--ha); border-bottom: 3px solid var(--ha); }
 
-        /* Inventory Table Styling */
-        .inventory-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background: var(--card-bg); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
-        .inventory-table th { background: #1a1a1a; text-align: left; padding: 12px 15px; color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
-        .inventory-table td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); border-right: 1px solid var(--border-color); font-size: 0.9rem; }
-        .inventory-table tr:last-child td { border-bottom: none; }
+        .container { max-width: 900px; margin: auto; padding: 20px; }
+        .inventory-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 8px; overflow: hidden; }
+        .inventory-table td, th { padding: 15px; border-bottom: 1px solid #222; text-align: left; }
+        th { background: #1a1a1a; font-size: 0.7rem; text-transform: uppercase; color: #888; }
         
-        .category-header { background: #1a1a1a; color: #fff; font-weight: bold; padding: 10px 15px; border-left: 4px solid var(--fpv-orange); display: flex; justify-content: space-between; margin-top: 20px; }
-        .ha-header { border-left-color: var(--ha-blue); }
-
-        .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-        .online { color: #4caf50; background: rgba(76, 175, 80, 0.1); }
-        .offline { color: #f44336; background: rgba(244, 67, 54, 0.1); }
-        .static-ip { color: var(--ha-blue); font-family: monospace; }
+        .status-tag { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; background: #222; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>SYSTEMS INVENTORY v1.2</h1>
-    <p style="color: var(--text-dim); font-size: 0.8rem;">DRONE HANGAR // HOME ASSISTANT NODES</p>
-</header>
-<div class="container">
-    <div class="progress-section">
-        <div class="progress-item">
-            <div class="progress-label">
-                <span>FLIGHT READY FLEET</span>
-                <span>75%</span>
-            </div>
-            <div class="progress-bar-bg">
-                <div class="progress-fill orange" style="width: 75%;"></div>
-            </div>
-        </div>
-
-        <div class="progress-item">
-            <div class="progress-label">
-                <span>HOME AUTOMATION DEPLOYMENT</span>
-                <span>40%</span>
-            </div>
-            <div class="progress-bar-bg">
-                <div class="progress-fill blue" style="width: 40%;"></div>
-            </div>
-        </div>
+    <div class="nav-bar">
+        <button class="nav-btn active fpv-btn" onclick="showCategory('Drone')">🛸 FPV HANGAR</button>
+        <button class="nav-btn ha-btn" onclick="showCategory('Home')">🏠 SMART HOME</button>
     </div>
-</div>
 
-<style>
-    .progress-section { 
-        background: #111; 
-        padding: 20px; 
-        border-radius: 8px; 
-        border: 1px dashed #333;
-        margin-bottom: 30px;
-    }
-    .progress-item { margin-bottom: 15px; }
-    .progress-item:last-child { margin-bottom: 0; }
-    
-    .progress-label { 
-        display: flex; 
-        justify-content: space-between; 
-        font-size: 0.7rem; 
-        font-weight: bold; 
-        margin-bottom: 8px; 
-        letter-spacing: 1px;
-    }
+    <div class="container">
+        <div id="content">Loading System Data...</div>
+    </div>
 
-    .progress-bar-bg { 
-        background: #222; 
-        height: 10px; 
-        border-radius: 5px; 
-        overflow: hidden; 
-    }
-    
-    .progress-fill { height: 100%; border-radius: 5px; transition: width 1s ease-in-out; }
-    .orange { background: var(--fpv-orange); box-shadow: 0 0 10px rgba(255, 102, 0, 0.4); }
-    .blue { background: var(--ha-blue); box-shadow: 0 0 10px rgba(3, 169, 244, 0.4); }
-</style>
-<div class="container">
+    <script>
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLPLCFFC8Hi3lfSSHxo-1KRi9BYhboLM7s2zCZXSmCQbXtjIC9mdbzgi-J_kgdGO4XiEWzGQXZRoMV/pub?gid=0&single=true&output=csv
+            ";
+        let masterData = [];
 
-    <span class="master-label">Section 01: FPV Components</span>
+        async function init() {
+            const response = await fetch(sheetUrl);
+            const text = await response.text();
+            // Split CSV into rows and columns
+            masterData = text.split('\n').map(row => row.split(','));
+            showCategory('Drone'); // Default view
+        }
 
-    <div class="category-header"><span>Flight Controllers</span></div>
-    <table class="inventory-table">
-        <thead><tr><th>Model</th><th>Assignment</th><th>Status</th></tr></thead>
-        <tbody>
-            <tr><td>Foxeer F722 V4 Flight Controller X8 DJI Type-C
-</td><td>5" Freestyle</td><td><span class="tag online">Active</span></td></tr>
-            <tr><td>T-Motor_Velox_Lite F411</td><td>Darwin_ </td><td><span class="tag online">Active</span></td></tr>
-        </tbody>
-    </table>
+        function showCategory(cat) {
+            // Update Buttons
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
 
-    <div class="category-header"><span>Motors & Power</span></div>
-    <table class="inventory-table">
-        <thead><tr><th>Part</th><th>Specs</th><th>Qty</th></tr></thead>
-        <tbody>
-            <tr><td>Emax ECO II</td><td>2207 / 1700KV</td><td>4</td></tr>
-            <tr><td>BetaFPV 1102</td><td>22000KV</td><td>2 Spares</td></tr>
-        </tbody>
-    </table>
+            // Build Table
+            let html = `<table class="inventory-table"><thead><tr><th>Model</th><th>Specs</th><th>Status</th></tr></thead><tbody>`;
+            
+            // Filter data based on the "Category" column (Column 0 in your sheet)
+            masterData.forEach(cols => {
+                if (cols[0] === cat) {
+                    html += `<tr>
+                        <td><strong>${cols[1]}</strong></td>
+                        <td>${cols[2]}</td>
+                        <td><span class="status-tag">${cols[3]}</span></td>
+                    </tr>`;
+                }
+            });
 
-    <span class="master-label">Section 02: Smart Home Infrastructure</span>
+            html += `</tbody></table>`;
+            document.getElementById('content').innerHTML = html;
+        }
 
-    <div class="category-header ha-header"><span>Network Nodes & Hubs</span></div>
-    <table class="inventory-table">
-        <thead><tr><th>Node Name</th><th>Address / ID</th><th>Protocol</th></tr></thead>
-        <tbody>
-            <tr><td><strong>HA Main Server</strong></td><td><span class="static-ip">192.168.1.100</span></td><td>Ethernet</td></tr>
-            <tr><td>SkyConnect Dongle</td><td>USB Path: /dev/ttyUSB0</td><td>Zigbee/Thread</td></tr>
-            <tr><td>Living Room ESP32</td><td><span class="static-ip">192.168.1.105</span></td><td>ESPHome (WiFi)</td></tr>
-        </tbody>
-    </table>
-
-    <div class="category-header ha-header"><span>End Devices</span></div>
-    <table class="inventory-table">
-        <thead><tr><th>Device</th><th>Area</th><th>Battery / State</th></tr></thead>
-        <tbody>
-            <tr><td>Temp/Humidity Sensor</td><td>Server Room</td><td>92%</td></tr>
-            <tr><td>Smart Plug (3D Printer)</td><td>Garage</td><td><span class="tag online">Connected</span></td></tr>
-            <tr><td>Motion Sensor</td><td>Front Hall</td><td><span class="tag offline">Low Battery</span></td></tr>
-        </tbody>
-    </table>
-
-</div>
-
+        init();
+    </script>
 </body>
 </html>
