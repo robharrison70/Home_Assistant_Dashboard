@@ -20,6 +20,9 @@
         
         .status-tag { background: #222; padding: 4px 8px; border-radius: 4px; border: 1px solid #444; font-size: 0.8rem; }
         .loading-msg { text-align: center; margin-top: 50px; color: var(--fpv); font-style: italic; letter-spacing: 2px; }
+        
+        .footer-info { text-align: center; margin-top: 40px; padding: 20px; border-top: 1px solid #222; color: #555; font-size: 0.7rem; letter-spacing: 1px; }
+        #last-sync { color: var(--ha); }
     </style>
 </head>
 <body>
@@ -33,6 +36,10 @@
         <div id="content">
             <div class="loading-msg">INITIALIZING SYSTEM DATA...</div>
         </div>
+        
+        <div class="footer-info">
+            SYSTEM STATUS: ONLINE | LAST DATA SYNC: <span id="last-sync">NEVER</span>
+        </div>
     </div>
 
     <script>
@@ -41,20 +48,21 @@
         let masterData = [];
 
         async function init() {
-            console.log("Starting fetch...");
             try {
                 const response = await fetch(sheetUrl);
                 if (!response.ok) throw new Error('Network response was not ok');
                 const text = await response.text();
                 
-                // Parse CSV rows
+                // Parse CSV rows and AGGRESSIVELY trim spaces
                 const rows = text.split('\n');
                 masterData = rows.map(row => {
-                    // This regex handles commas inside quotes if you ever have them
                     return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/"/g, '').trim());
                 });
 
-                console.log("Data loaded:", masterData);
+                // Update the timestamp
+                const now = new Date();
+                document.getElementById('last-sync').innerText = now.toLocaleTimeString();
+
                 showCategory('Drone'); 
             } catch (error) {
                 console.error("Fetch error:", error);
@@ -63,7 +71,6 @@
         }
 
         function showCategory(cat) {
-            // Update UI buttons
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             if(cat === 'Drone') document.getElementById('btn-drone').classList.add('active');
             if(cat === 'Home') document.getElementById('btn-home').classList.add('active');
@@ -74,7 +81,7 @@
             
             let count = 0;
             masterData.forEach((cols, index) => {
-                // Skip the header row and filter by category in column 1
+                // This checks column 0 for the category
                 if (index > 0 && cols[0] === cat) {
                     count++;
                     html += `<tr>
@@ -86,14 +93,13 @@
             });
 
             if (count === 0) {
-                html += `<tr><td colspan="3" style="text-align:center; padding:40px; color:#666;">No items found labeled "${cat}" in your sheet.</td></tr>`;
+                html += `<tr><td colspan="3" style="text-align:center; padding:40px; color:#666;">No items found for "${cat}". <br><br>Current Data in Sheet: ${masterData.length > 1 ? masterData[1][0] : 'Empty'}</td></tr>`;
             }
 
             html += `</tbody></table>`;
             document.getElementById('content').innerHTML = html;
         }
 
-        // Run on load
         window.onload = init;
     </script>
 </body>
