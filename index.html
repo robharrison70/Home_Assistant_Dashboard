@@ -40,29 +40,32 @@
 
     <div class="container">
         <div id="content">
-            <div style="text-align:center; padding:50px; color:var(--ha-blue);">FETCHING SYSTEM STATES...</div>
+            <div style="text-align:center; padding:50px; color:var(--ha-blue);">FETCHING LIVE DATA...</div>
         </div>
         <div class="footer-info">SYSTEM STATUS: ACTIVE | SYNC: <span id="last-sync">--:--:--</span></div>
     </div>
 
     <script>
+        // YOUR PUBLIC CSV LINK
         const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLPLCFFC8Hi3lfSSHxo-1KRi9BYhboLM7s2zCZXSmCQbXtjIC9mdbzgi-J_kgdGO4XiEWzGQXZRoMV/pub?gid=0&single=true&output=csv";
         
         function getStatusClass(status) {
             if (!status) return 'status-neutral';
             const s = status.toLowerCase();
-            if (s.includes('online') || s.includes('active') || s.includes('running') || s.includes('on')) return 'status-online';
-            if (s.includes('offline') || s.includes('down') || s.includes('off')) return 'status-offline';
+            if (s.includes('online') || s.includes('active') || s.includes('running') || s.includes('on') || s.includes('ready')) return 'status-online';
+            if (s.includes('offline') || s.includes('down') || s.includes('off') || s.includes('repair')) return 'status-offline';
             return 'status-neutral';
         }
 
-     async function init() {
+        async function init() {
             try {
                 const response = await fetch(sheetUrl);
                 const text = await response.text();
-                const rows = text.split('\n');
                 
-                // Parse CSV and trim spaces
+                // Split by line and remove empty lines
+                const rows = text.split(/\r?\n/).filter(row => row.trim() !== "");
+                
+                // Parse CSV rows
                 const data = rows.map(row => 
                     row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/"/g, '').trim())
                 );
@@ -72,17 +75,24 @@
                 let html = '<table class="inventory-table"><thead><tr><th>Device</th><th>Details</th><th>Status</th></tr></thead><tbody>';
                 let found = 0;
 
-                data.forEach((cols, i) => {
-                    // Skip the header (Row 1) and make sure the row isn't empty
-                    if (i > 0 && cols[0] !== "" && cols.length >= 2) { 
+                // Loop starts at 1 to skip your header row (Device, Details, Status)
+                for (let i = 1; i < data.length; i++) {
+                    const cols = data[i];
+                    
+                    // If the first column has text, we show the row
+                    if (cols[0] && cols[0].length > 0) { 
                         found++;
                         html += `<tr>
-                            <td><strong>${cols[0]}</strong></td> <td>${cols[1] || '---'}</td>    <td><span class="status-tag ${getStatusClass(cols[2])}">${cols[2] || '---'}</span></td> </tr>`;
+                            <td><strong>${cols[0]}</strong></td>
+                            <td>${cols[1] || '---'}</td>
+                            <td><span class="status-tag ${getStatusClass(cols[2])}">${cols[2] || '---'}</span></td>
+                        </tr>`;
                     }
-                });
+                }
 
                 if (found === 0) {
-                    html += `<tr><td colspan="3" style="text-align:center; padding:40px; color:#777;">No data found. Check that your Google Sheet has data in Columns A, B, and C.</td></tr>`;
+                    const sample = data[1] ? data[1].join(' | ') : "Empty Sheet";
+                    html += `<tr><td colspan="3" style="text-align:center; padding:40px; color:#777;">No data found in rows. <br><br><small>Code is reading: "${sample}"</small></td></tr>`;
                 }
 
                 html += '</tbody></table>';
@@ -92,11 +102,11 @@
             }
         }
 
-        // Run on load and refresh every 5 minutes
+        // Run immediately on load
         window.onload = init;
+        
+        // Refresh every 5 minutes (300,000 milliseconds)
         setInterval(init, 300000); 
     </script>
 </body>
 </html>
-
-
